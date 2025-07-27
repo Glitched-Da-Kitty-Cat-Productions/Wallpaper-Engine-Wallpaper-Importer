@@ -260,7 +260,9 @@ def parse_workshop():
         return jsonify(workshop_info)
     else:
         return jsonify({'error': 'Could not fetch workshop information'})
-
+@app.route("/loading", methods=["GET"])
+def loading():
+    return render_template("loading.html")
 @app.route('/download', methods=['POST'])
 def download():
     data = request.get_json()
@@ -450,10 +452,13 @@ def check_system_requirements():
 
 if __name__ == '__main__':
     config = load_config()
-
+    debugmode = config.get('debug', False)
+    if debugmode:
+        print("🔧 Debug mode enabled")
+    else:
+        ctypes.windll.user32.ShowWindow(ctypes.windll.kernel32.GetConsoleWindow(), 0)
     print("🎨 Wallpaper Engine Workshop Downloader")
     print("=" * 50)
-    config
     try:
         import sys
         if sys.version_info < (3, 7):
@@ -472,10 +477,24 @@ if __name__ == '__main__':
         
         print("\n🔌 Checking port availability...")
         if not check_port_availability(5001):
-            print("💡 Port 5001 is already in use. This might cause issues.")
-            choice = input("Continue anyway? (y/N): ").lower().strip()
-            if choice != 'y':
-                sys.exit(1)
+            print("💡 Port 5001 is already in use. Attempting to free the port...")
+            import psutil
+            for proc in psutil.process_iter(['pid', 'name', 'connections']):
+                for conn in proc.info['connections']:
+                    if conn.laddr.port == 5001:
+                        print(f"Terminating process {proc.info['name']} (PID {proc.info['pid']}) using port 5001")
+                        try:
+                            p = psutil.Process(proc.info['pid'])
+                            p.terminate()
+                            p.wait(timeout=5)
+                            print("Process terminated successfully.")
+                        except Exception as e:
+                            print(f"Failed to terminate process: {e}")
+            if not check_port_availability(5001):
+                print("Port 5001 is still in use after attempting to free it.")
+                choice = input("Continue anyway? (y/N): ").lower().strip()
+                if choice != 'y':
+                    sys.exit(1)
         
         print("\n📁 Creating directories...")
         try:
@@ -519,7 +538,7 @@ if __name__ == '__main__':
         webview_success = False
         try:
             import webview
-            window = webview.create_window(title='Glitcheds Wallpaper Engine Workshop Downloader', url='http://127.0.0.1:5001', width=1200, height=800, min_size=(800, 600), resizable=True, maximized=False)
+            window = webview.create_window(title='Glitcheds Wallpaper Engine Workshop Downloader', url='http://127.0.0.1:5001', width=1200, height=800, min_size=(800, 600), resizable=False, maximized=True)
             print("✅ Desktop window created")
             webview.start(debug=False)
             webview_success = True
