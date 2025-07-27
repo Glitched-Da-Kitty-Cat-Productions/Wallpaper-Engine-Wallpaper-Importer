@@ -160,3 +160,4 @@ If you encounter issues:
 - **Flask**: Web framework
 - **Bootstrap**: UI framework
 - **Socket.IO**: Real-time communication
+- **Ai**: For Making The README.md because I am very lazy
