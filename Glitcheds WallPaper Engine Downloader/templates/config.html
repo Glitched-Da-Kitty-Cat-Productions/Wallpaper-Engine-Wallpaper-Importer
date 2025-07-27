@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Wallpaper Engine Workshop Downloader{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-cog me-2"></i>
+                    Application Settings
+                </h4>
+            </div>
+            <div class="card-body">
+                <form id="configForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="steam_username" class="form-label">
+                                    <i class="fab fa-steam me-1"></i>
+                                    Steam Username
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="steam_username" 
+                                       name="steam_username" 
+                                       value="{{ config.steam_username }}"
+                                       placeholder="Enter your Steam username"
+                                       required>
+                                <div class="form-text">
+                                    Your Steam account username (not display name).
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="steam_password" class="form-label">
+                                    <i class="fas fa-key me-1"></i>
+                                    Steam Password
+                                </label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="steam_password" 
+                                       name="steam_password" 
+                                       value="{{ config.steam_password }}"
+                                       placeholder="Enter your Steam password"
+                                       required>
+                                <div class="form-text">
+                                    Your Steam account password. Stored locally only.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="wallpaper_engine_path" class="form-label">
+                            <i class="fas fa-folder me-1"></i>
+                            Wallpaper Engine Projects Path
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="wallpaper_engine_path" 
+                               name="wallpaper_engine_path" 
+                               value="{{ config.wallpaper_engine_path }}"
+                               placeholder="C:/Program Files (x86)/Steam/steamapps/common/wallpaper_engine/projects/myprojects"
+                               required>
+                        <div class="form-text">
+                            Path where downloaded wallpapers will be saved.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="depot_downloader_path" class="form-label">
+                            <i class="fas fa-terminal me-1"></i>
+                            DepotDownloader Path
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="depot_downloader_path" 
+                               name="depot_downloader_path" 
+                               value="{{ config.depot_downloader_path }}"
+                               placeholder="./DepotDownloaderMod/DepotDownloaderMod.exe"
+                               required>
+                        <div class="form-text">
+                            Path to the DepotDownloader executable.
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="mb-3 mt-4">
+                                <i class="fas fa-palette me-2"></i>
+                                Appearance
+                            </h5>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="darkModeToggle">
+                                    <label class="form-check-label" for="darkModeToggle">
+                                        <i class="fas fa-moon me-1"></i>
+                                        Dark Mode
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    Switch between light and dark theme for better viewing experience.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary me-md-2" onclick="testConnection()">
+                            <i class="fas fa-plug me-2"></i>
+                            Test Connection
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-2"></i>
+                            Save Settings
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-warning" role="alert">
+            <h6 class="alert-heading">
+                <i class="fas fa-shield-alt me-2"></i>
+                Security Notice
+            </h6>
+            <p class="mb-0">
+                Your Steam credentials are stored locally on your computer and are only used to authenticate with Steam's servers through DepotDownloader. 
+                We recommend using Steam Guard and never sharing your credentials.
+                <br><br>
+                <strong>Tip:</strong> Consider creating a dedicated Steam account for downloading workshop content if you're concerned about security.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function initializeDarkMode() {
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    
+    darkModeToggle.checked = isDarkMode;
+    applyDarkMode(isDarkMode);
+    
+    darkModeToggle.addEventListener('change', function() {
+        const enableDarkMode = this.checked;
+        localStorage.setItem('darkMode', enableDarkMode);
+        applyDarkMode(enableDarkMode);
+        
+        showToast(enableDarkMode ? 'Dark mode enabled' : 'Light mode enabled', 'success');
+    });
+}
+
+function applyDarkMode(enabled) {
+    if (enabled) {
+        document.body.classList.add('dark-mode');
+    } else {
+        document.body.classList.remove('dark-mode');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDarkMode();
+});
+
+document.getElementById('configForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    
+    fetch('/config', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.error || 'Error saving configuration', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error saving configuration', 'error');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save me-2"></i>Save Settings';
+    });
+});
+
+function testConnection() {
+    const formData = new FormData(document.getElementById('configForm'));
+    
+    const testBtn = document.querySelector('button[onclick="testConnection()"]');
+    testBtn.disabled = true;
+    testBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Testing...';
+    
+    fetch('/config', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            return fetch('/test_config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+        } else {
+            throw new Error('Failed to save configuration');
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast(data.message, 'success');
+            
+            if (data.warnings && data.warnings.length > 0) {
+                setTimeout(() => {
+                    data.warnings.forEach((warning, index) => {
+                        setTimeout(() => {
+                            showToast(warning, 'info');
+                        }, index * 1000);
+                    });
+                }, 500);
+            }
+        } else {
+            showToast(data.message, 'error');
+            if (data.issues && data.issues.length > 0) {
+                setTimeout(() => {
+                    data.issues.forEach((issue, index) => {
+                        setTimeout(() => {
+                            showToast(issue, 'error');
+                        }, index * 1000);
+                    });
+                }, 500);
+            }
+            
+            if (data.warnings && data.warnings.length > 0) {
+                setTimeout(() => {
+                    data.warnings.forEach((warning, index) => {
+                        setTimeout(() => {
+                            showToast(warning, 'warning');
+                        }, (data.issues.length + index) * 1000);
+                    });
+                }, 500);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Error testing configuration: ' + error.message, 'error');
+    })
+    .finally(() => {
+        testBtn.disabled = false;
+        testBtn.innerHTML = '<i class="fas fa-plug me-2"></i>Test Connection';
+    });
+}
+
+function showToast(message, type = 'info') {
+    const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+    const toastId = 'toast-' + Date.now();
+    
+    let bgClass = 'bg-info';
+    let icon = 'fa-info-circle';
+    
+    switch(type) {
+        case 'success':
+            bgClass = 'bg-success';
+            icon = 'fa-check-circle';
+            break;
+        case 'error':
+            bgClass = 'bg-danger';
+            icon = 'fa-exclamation-circle';
+            break;
+        case 'warning':
+            bgClass = 'bg-warning';
+            icon = 'fa-exclamation-triangle';
+            break;
+    }
+    
+    const toastHtml = `
+        <div class="toast" id="${toastId}" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header ${bgClass} text-white">
+                <i class="fas ${icon} me-2"></i>
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+    
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement);
+    toast.show();
+    
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+    container.id = 'toastContainer';
+    document.body.appendChild(container);
+    return container;
+}
+</script>
+{% endblock %}

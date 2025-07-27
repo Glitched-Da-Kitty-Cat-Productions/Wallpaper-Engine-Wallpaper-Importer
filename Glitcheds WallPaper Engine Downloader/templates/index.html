@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-cloud-download-alt me-2"></i>
+                    Steam Workshop Downloader
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <label for="workshopUrl" class="form-label">
+                            <i class="fab fa-steam me-1"></i>
+                            Steam Workshop URL or ID
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="workshopUrl" 
+                               placeholder="https://steamcommunity.com/sharedfiles/filedetails/?id=3510729512 or just 3510729512"
+                               autocomplete="off">
+                        <div class="form-text">
+                            Enter a Steam Workshop URL or just the workshop ID number.
+                        </div>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button class="btn btn-success btn-lg w-100" id="parseBtn" onclick="parseWorkshopUrl()">
+                            <i class="fas fa-search me-2"></i>
+                            Parse & Preview
+                        </button>
+                    </div>
+                </div>
+
+                <div id="workshopPreview" class="d-none">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-eye me-2"></i>
+                                Workshop Item Preview
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row" id="previewContent">
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-primary btn-lg" id="downloadBtn" onclick="startDownload()">
+                                    <i class="fas fa-download me-2"></i>
+                                    Download Wallpaper
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if not config.steam_username or not config.steam_password %}
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Configuration Required:</strong> 
+                    Please configure your Steam credentials in 
+                    <a href="{{ url_for('config') }}" class="alert-link">Settings</a> 
+                    before downloading.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fab fa-steam me-2"></i>
+                    Browse Steam Workshop
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchQuery" placeholder="Search wallpapers..." onkeypress="if(event.key==='Enter') searchWorkshop()">
+                            <button class="btn btn-primary" onclick="searchWorkshop()">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="sortSelect">
+                            <option value="trend">Trending</option>
+                            <option value="mostrecent">Most Recent</option>
+                            <option value="mostsubscribed">Most Subscribed</option>
+                            <option value="mostpopular">Most Popular</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-success w-100" onclick="browseTrending()">
+                            <i class="fas fa-fire me-1"></i>
+                            Browse Trending
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="workshopGrid" class="workshop-grid">
+                    <div class="empty-state text-center py-4">
+                        <i class="fab fa-steam fa-3x mb-3 text-muted"></i>
+                        <h5>Browse Workshop Content</h5>
+                        <p class="text-muted">Search for wallpapers or browse trending content!</p>
+                    </div>
+                </div>
+                
+                <div id="workshopLoading" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Searching Steam Workshop...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-list me-2"></i>
+                    Download Queue
+                </h4>
+            </div>
+            <div class="card-body">
+                <div id="downloadQueue">
+                    <p class="text-muted text-center">No downloads in queue. Parse and download a workshop item to see progress here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+</script>
+{% endblock %}
