@@ -23,13 +23,18 @@ DEFAULT_CONFIG = {
     'steam_username': 'ruiiixx',
     'steam_password': 'S67GBTB83D3Y',
     'wallpaper_engine_path': 'C:/Program Files (x86)/Steam/steamapps/common/wallpaper_engine/projects/myprojects',
-    'depot_downloader_path': './DepotDownloaderMod/DepotDownloader.exe'
+    'depot_downloader_path': './DepotDownloaderMod/DepotDownloader.exe',
+    'dark_mode': False
 }
 
 def load_config():
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r') as f:
-            return json.load(f)
+            config = json.load(f)
+            for key, value in DEFAULT_CONFIG.items():
+                if key not in config:
+                    config[key] = value
+            return config
     else:
         save_config(DEFAULT_CONFIG)
         return DEFAULT_CONFIG
@@ -61,6 +66,8 @@ def get_workshop_info(workshop_id):
             title_elem = soup.find('div', class_='workshopItemTitle')
             title = title_elem.text.strip() if title_elem else f"Workshop Item {workshop_id}"
             preview_elem = soup.find('img', id='previewImage')
+            if not preview_elem:
+                preview_elem = soup.select_one('.workshopItemPreviewImage img')
             preview_url = preview_elem['src'] if preview_elem else None
             return {'id': workshop_id, 'title': title, 'preview_url': preview_url, 'url': url}
         return {'id': workshop_id, 'title': f"Workshop Item {workshop_id}", 'preview_url': None, 'url': url}
@@ -68,19 +75,21 @@ def get_workshop_info(workshop_id):
         print(f"Error fetching workshop info: {e}")
         return {'id': workshop_id, 'title': f"Workshop Item {workshop_id}", 'preview_url': None, 'url': f"https://steamcommunity.com/sharedfiles/filedetails/?id={workshop_id}"}
 
-def search_workshop(query, sort='trend'):
+def search_workshop(query, sort='trend', page=1):
     try:
-        url = "https://steamcommunity.com/workshop/browse/"
+        url = f"https://steamcommunity.com/workshop/browse/"
         params = {
             'appid': '431960',
             'searchtext': query if query else '',
             'childpublishedfileid': '0',
             'browsesort': sort,
+            'actualsort': sort,
             'section': 'readytouseitems',
             'created_date_range_filter_start': '0',
             'created_date_range_filter_end': '0',
             'updated_date_range_filter_start': '0',
-            'updated_date_range_filter_end': '0'
+            'updated_date_range_filter_end': '0',
+            'p': page,
         }
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
         response = requests.get(url, params=params, headers=headers, timeout=15)
@@ -90,7 +99,7 @@ def search_workshop(query, sort='trend'):
             items = []
             
             workshop_items = soup.find_all('div', class_='workshopItem')
-            for item in workshop_items[:20]:
+            for item in workshop_items:
                 try:
                     link_elem = item.find('a', class_='ugc')
                     if link_elem and 'href' in link_elem.attrs:
@@ -125,7 +134,8 @@ def search_workshop(query, sort='trend'):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    config = load_config()
+    return render_template('index.html', config=config)
 
 @app.route('/config', methods=['GET', 'POST'])
 def config():
@@ -134,7 +144,8 @@ def config():
             'steam_username': request.form.get('steam_username', ''),
             'steam_password': request.form.get('steam_password', ''),
             'wallpaper_engine_path': request.form.get('wallpaper_engine_path', DEFAULT_CONFIG['wallpaper_engine_path']),
-            'depot_downloader_path': request.form.get('depot_downloader_path', DEFAULT_CONFIG['depot_downloader_path'])
+            'depot_downloader_path': request.form.get('depot_downloader_path', DEFAULT_CONFIG['depot_downloader_path']),
+            'dark_mode': request.form.get('dark_mode') == 'on' 
         }
         save_config(new_config)
         return jsonify({'success': True, 'message': 'Configuration saved successfully!'})
@@ -146,12 +157,28 @@ def api_search():
     data = request.get_json()
     query = data.get('query', '').strip()
     sort = data.get('sort', 'trend')
+    page = data.get('page', 1)
     
     try:
-        results = search_workshop(query, sort)
+        results = search_workshop(query, sort, page)
         return jsonify({'success': True, 'results': results})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/dark-mode', methods=['GET', 'POST'])
+def api_dark_mode():
+    if request.method == 'POST':
+        data = request.get_json()
+        dark_mode = data.get('dark_mode', False)
+        
+        config = load_config()
+        config['dark_mode'] = dark_mode
+        save_config(config)
+        
+        return jsonify({'success': True, 'dark_mode': dark_mode})
+    else:
+        config = load_config()
+        return jsonify({'dark_mode': config.get('dark_mode', False)})
 
 @app.route('/test_config', methods=['POST'])
 def test_config():
@@ -422,9 +449,11 @@ def check_system_requirements():
     return True
 
 if __name__ == '__main__':
+    config = load_config()
+
     print("🎨 Wallpaper Engine Workshop Downloader")
     print("=" * 50)
-    
+    config
     try:
         import sys
         if sys.version_info < (3, 7):
@@ -490,7 +519,7 @@ if __name__ == '__main__':
         webview_success = False
         try:
             import webview
-            window = webview.create_window(title='Wallpaper Engine Workshop Downloader', url='http://127.0.0.1:5001', width=1200, height=800, min_size=(800, 600), resizable=True, maximized=False)
+            window = webview.create_window(title='Glitcheds Wallpaper Engine Workshop Downloader', url='http://127.0.0.1:5001', width=1200, height=800, min_size=(800, 600), resizable=True, maximized=False)
             print("✅ Desktop window created")
             webview.start(debug=False)
             webview_success = True

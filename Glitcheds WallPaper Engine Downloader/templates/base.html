@@ -11,7 +11,7 @@
     
     {% block extra_css %}{% endblock %}
 </head>
-<body>
+<body class="{% if config and config.dark_mode %}dark-mode{% endif %}">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
@@ -43,12 +43,6 @@
     <main class="container mt-4">
         {% block content %}{% endblock %}
     </main>
-
-    <footer class="bg-dark text-light mt-5 py-4">
-        <div class="container text-center">
-            <p>&copy; 2024 Wallpaper Engine Workshop Downloader. Built with Flask & DepotDownloader.</p>
-        </div>
-    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>

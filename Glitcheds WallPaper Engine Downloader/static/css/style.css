@@ -172,12 +172,30 @@ body {
 .toast {
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    color: #212529; /* default text color */
 }
 
 .toast-header {
     border-radius: 8px 8px 0 0;
     border-bottom: none;
     font-weight: 500;
+}
+
+/* Dark mode toast overrides */
+.dark-mode .toast {
+    background-color: #2d2d2d !important;
+    color: #e0e0e0 !important;
+    box-shadow: 0 4px 16px rgba(255,255,255,0.1);
+}
+
+.dark-mode .toast-header {
+    background-color: #404040 !important;
+    color: #e0e0e0 !important;
+    border-bottom: none;
+}
+
+.dark-mode .toast .btn-close {
+    filter: invert(1);
 }
 
 .loading-spinner {

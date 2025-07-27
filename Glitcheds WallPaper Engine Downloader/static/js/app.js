@@ -116,6 +116,7 @@ function showWorkshopPreview(data) {
     }
 }
 
+
 function startDownload() {
     if (!currentWorkshopId) {
         showToast('Please parse a workshop item first', 'warning');
@@ -296,7 +297,11 @@ function showToast(message, type = 'info') {
     }
 }
 
-function searchWorkshop() {
+let currentPage = 1;
+let currentQuery = '';
+let currentSort = 'trend';
+
+function searchWorkshop(page = 1) {
     const query = document.getElementById('searchQuery').value.trim();
     const sort = document.getElementById('sortSelect').value;
     
@@ -305,8 +310,9 @@ function searchWorkshop() {
         return;
     }
     
-    document.getElementById('workshopLoading').style.display = 'block';
     document.getElementById('workshopGrid').innerHTML = '';
+    
+    document.getElementById('workshopLoading').style.display = 'block';
     
     fetch('/api/search', {
         method: 'POST',
@@ -315,7 +321,8 @@ function searchWorkshop() {
         },
         body: JSON.stringify({
             query: query,
-            sort: sort
+            sort: sort,
+            page: page
         })
     })
     .then(response => response.json())
@@ -327,6 +334,10 @@ function searchWorkshop() {
             console.log('Results:', data.results);
             displayWorkshopResults(data.results);
             showToast(`Found ${data.results.length} results`, 'success');
+            currentPage = page;
+            currentQuery = query;
+            currentSort = sort;
+            updatePaginationControls(data.results.length);
         } else {
             console.log('Search failed:', data.error);
             showToast(data.error || 'Search failed', 'error');
@@ -339,6 +350,67 @@ function searchWorkshop() {
         showToast('Failed to search workshop', 'error');
         showEmptyState();
     });
+}
+
+function appendWorkshopResults(results) {
+    const container = document.getElementById('workshopGrid');
+    results.forEach(item => {
+        const workshopItem = document.createElement('div');
+        workshopItem.className = 'workshop-item';
+        workshopItem.onclick = () => selectWorkshopItem(item.id, item.url);
+        
+        const cleanTitle = item.title.replace(/[<>&"']/g, function(match) {
+            const escape = {
+                '<': '<',
+                '>': '>',
+                '&': '&amp;',
+                '"': '"',
+                "'": '&#x27;'
+            };
+            return escape[match];
+        });
+        
+        workshopItem.innerHTML = `
+            ${item.preview_url ? 
+                `<img src="${item.preview_url}" alt="${cleanTitle}">` : 
+                `<div class="workshop-item-placeholder">
+                    <i class="fas fa-image fa-2x text-muted"></i>
+                </div>`
+            }
+            <div class="workshop-item-content">
+                <div class="workshop-item-title">${cleanTitle}</div>
+                <div class="workshop-item-stats">
+                    <span>ID: ${item.id}</span>
+                    <span>by ${item.author || 'Unknown'}</span>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(workshopItem);
+    });
+}
+
+function updatePaginationControls(resultCount) {
+    const paginationDiv = document.getElementById('paginationControls');
+    if (!paginationDiv) return;
+    
+    paginationDiv.innerHTML = '';
+    
+    if (currentPage > 1) {
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = 'Previous';
+        prevBtn.className = 'btn btn-secondary me-2';
+        prevBtn.onclick = () => searchWorkshop(currentPage - 1);
+        paginationDiv.appendChild(prevBtn);
+    }
+    
+    if (resultCount > 0) {
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = 'Next';
+        nextBtn.className = 'btn btn-primary';
+        nextBtn.onclick = () => searchWorkshop(currentPage + 1);
+        paginationDiv.appendChild(nextBtn);
+    }
 }
 
 function browseTrending() {
@@ -472,8 +544,29 @@ function escapeHtml(unsafe) {
 }
 
 function initializeDarkMode() {
-    const isDarkMode = localStorage.getItem('darkMode') === 'true';
-    if (isDarkMode) {
-        document.body.classList.add('dark-mode');
-    }
+    fetch('/api/dark-mode')
+        .then(response => response.json())
+        .then(data => {
+            if (data.dark_mode) {
+                document.body.classList.add('dark-mode');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading dark mode setting:', error);
+            const isDarkMode = localStorage.getItem('darkMode') === 'true';
+            if (isDarkMode) {
+                document.body.classList.add('dark-mode');
+                fetch('/api/dark-mode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ dark_mode: isDarkMode })
+                }).then(() => {
+                    localStorage.removeItem('darkMode');
+                }).catch(migrationError => {
+                    console.error('Error migrating dark mode setting:', migrationError);
+                });
+            }
+        });
 }
