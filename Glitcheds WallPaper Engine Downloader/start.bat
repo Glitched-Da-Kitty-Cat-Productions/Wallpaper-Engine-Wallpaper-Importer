@@ -4,5 +4,5 @@ echo Starting Wallpaper Engine Workshop Downloader...
 echo.
 pip install -r requirements.txt
 echo.
-python app.py
+python WE WallPaper Downloader.py
 pause
